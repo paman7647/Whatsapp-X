@@ -61,7 +61,8 @@ apk update && apk upgrade
 echo "📥 Installing Node.js, Chromium, and Build Tools..."
 apk add nodejs npm git ffmpeg chromium \
     libstdc++ chromium-swiftshader nss freetype \
-    harfbuzz ttf-freefont build-base python3
+    harfbuzz ttf-freefont build-base python3 \
+    tesseract-ocr tesseract-ocr-data-kan tesseract-ocr-data-eng
 
 echo "✅ Alpine Environment is Ready!"
 echo "💡 TO START THE BOT:"

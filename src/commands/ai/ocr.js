@@ -1,4 +1,4 @@
-```javascript
+
 const Tesseract = require('tesseract.js');
 const sharp = require('sharp');
 const logger = require('../../utils/logger');
@@ -30,7 +30,7 @@ module.exports = {
 
         try {
             const buffer = Buffer.from(media.data, 'base64');
-            
+
             // Image Preprocessing: Grayscale and Sharpen for better Tesseract accuracy
             const processedBuffer = await sharp(buffer)
                 .grayscale()
@@ -49,7 +49,7 @@ module.exports = {
             if (!text.trim()) {
                 await statusMsg.edit('❌ No text detected in the image.');
             } else {
-                await statusMsg.edit(`✅ * Extracted Text(Local):*\n\n${ text.trim() } `);
+                await statusMsg.edit(`✅ * Extracted Text(Local):*\n\n${text.trim()} `);
             }
 
         } catch (error) {
@@ -58,4 +58,4 @@ module.exports = {
         }
     }
 };
-```
+
