@@ -1,5 +1,7 @@
 {
-  "ping": 2,
+  "ping": 3,
   "permit": 4,
-  "help": 1
+  "help": 2,
+  "alive": 3,
+  "ocr": 1
 }

@@ -1,0 +1,11 @@
+{
+    "ignore": [
+        "data/*",
+        ".xbot_session/*",
+        "**/node_modules/**",
+        "**/public/**",
+        "package-lock.json"
+    ],
+    "ext": "js,mjs,cjs,json,html,css",
+    "delay": "2500"
+}
