@@ -1,12 +1,18 @@
-
-const Tesseract = require('tesseract.js');
+const tesseract = require('node-tesseract-ocr');
 const sharp = require('sharp');
 const logger = require('../../utils/logger');
+
+// Tesseract Configuration for Native Engine
+const tesseractConfig = {
+    lang: "eng+kan", // Support English and Kannada natively
+    oem: 1,         // Neural nets LSTM engine only
+    psm: 3,         // Fully automatic page segmentation, but no OSD
+};
 
 module.exports = {
     name: 'ocr',
     aliases: ['extract', 'read'],
-    description: 'Extract text from an image locally (No AI)',
+    description: 'Extract text using high-performance native engine (Offline)',
     usage: '(reply to image)',
     category: 'AI',
     async execute(message, args, client) {
@@ -23,38 +29,40 @@ module.exports = {
         }
 
         if (!media || !media.mimetype.startsWith('image/')) {
-            return message.reply('❌ Please reply to an image with `/ ocr` to extract text.');
+            return message.reply('❌ Please reply to an image with `/ocr` to extract text.');
         }
 
-        const statusMsg = await message.reply('🔍 *Local OCR: Processing image...*');
+        const statusMsg = await message.reply('🔍 *Native Engine: Processing image...*');
 
         try {
             const buffer = Buffer.from(media.data, 'base64');
 
-            // Image Preprocessing: Grayscale and Sharpen for better Tesseract accuracy
+            // Step 1: Image Preprocessing with Sharp
             const processedBuffer = await sharp(buffer)
+                .rotate()
+                .resize(1500)
                 .grayscale()
                 .normalize()
+                .sharpen()
                 .toBuffer();
 
-            // Run Tesseract with English and Kannada support
-            const { data: { text } } = await Tesseract.recognize(processedBuffer, 'eng+kan', {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        // Optional: can send progress updates if needed
-                    }
-                }
-            });
+            // Step 2: Recognition using Native System Binary
+            logger.info('OCR: Executing native tesseract binary...');
+            const text = await tesseract.recognize(processedBuffer, tesseractConfig);
 
-            if (!text.trim()) {
-                await statusMsg.edit('❌ No text detected in the image.');
+            if (!text || !text.trim()) {
+                await statusMsg.edit('❌ No text detected by the native engine.');
             } else {
-                await statusMsg.edit(`✅ * Extracted Text(Local):*\n\n${text.trim()} `);
+                await statusMsg.edit(`✅ *Extracted Text (Native Offline):*\n\n${text.trim()}`);
             }
 
         } catch (error) {
-            logger.error('Local OCR Error:', error);
-            await statusMsg.edit('❌ Local OCR failed. Ensure the image is clear.');
+            logger.error('Native OCR Error:', error);
+            if (error.message && (error.message.includes('NOT_FOUND') || error.message.includes('ENOENT'))) {
+                await statusMsg.edit('❌ Native OCR engine not found. Please run the setup script to install Tesseract.');
+            } else {
+                await statusMsg.edit('❌ OCR processing failed. Try with a clearer image.');
+            }
         }
     }
 };
