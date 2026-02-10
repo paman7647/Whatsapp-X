@@ -1,18 +1,13 @@
-const tesseract = require('node-tesseract-ocr');
+const { spawn } = require('child_process');
 const sharp = require('sharp');
 const logger = require('../../utils/logger');
-
-// Tesseract Configuration for Native Engine
-const tesseractConfig = {
-    lang: "eng+kan", // Support English and Kannada natively
-    oem: 1,         // Neural nets LSTM engine only
-    psm: 3,         // Fully automatic page segmentation, but no OSD
-};
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
     name: 'ocr',
     aliases: ['extract', 'read'],
-    description: 'Extract text using high-performance native engine (Offline)',
+    description: 'Extract text using high-accuracy Python AI engine (Offline)',
     usage: '(reply to image)',
     category: 'AI',
     async execute(message, args, client) {
@@ -32,38 +27,57 @@ module.exports = {
             return message.reply('❌ Please reply to an image with `/ocr` to extract text.');
         }
 
-        const statusMsg = await message.reply('🔍 *Native Engine: Processing image...*');
+        const statusMsg = await message.reply('🔍 *Python AI: Extracting text (Fast)...*');
 
         try {
             const buffer = Buffer.from(media.data, 'base64');
+            const tempDir = path.join(process.cwd(), 'data/temp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-            // Step 1: Image Preprocessing with Sharp
-            const processedBuffer = await sharp(buffer)
+            const tempPath = path.join(tempDir, `ocr_${Date.now()}.png`);
+
+            // Step 1: Pre-process with Sharp for maximum contrast
+            await sharp(buffer)
                 .rotate()
-                .resize(1500)
+                .resize(1200)
                 .grayscale()
                 .normalize()
-                .sharpen()
-                .toBuffer();
+                .toFile(tempPath);
 
-            // Step 2: Recognition using Native System Binary
-            logger.info('OCR: Executing native tesseract binary...');
-            const text = await tesseract.recognize(processedBuffer, tesseractConfig);
+            // Step 2: Call Python Bridge
+            const pythonScript = path.join(__dirname, '../../scripts/ocr_engine.py');
 
-            if (!text || !text.trim()) {
-                await statusMsg.edit('❌ No text detected by the native engine.');
-            } else {
-                await statusMsg.edit(`✅ *Extracted Text (Native Offline):*\n\n${text.trim()}`);
-            }
+            const pythonProcess = spawn('python3', [pythonScript, tempPath]);
+            let extractedText = '';
+            let errorText = '';
+
+            pythonProcess.stdout.on('data', (data) => {
+                extractedText += data.toString();
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                errorText += data.toString();
+            });
+
+            pythonProcess.on('close', async (code) => {
+                // Cleanup temp file
+                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+
+                if (code !== 0) {
+                    logger.error(`Python OCR Error: ${errorText}`);
+                    return await statusMsg.edit('❌ AI Error: Python bridge failed. Ensure EasyOCR is installed.');
+                }
+
+                if (!extractedText.trim()) {
+                    await statusMsg.edit('❌ No text detected by the Python engine.');
+                } else {
+                    await statusMsg.edit(`✅ *Extracted Text (Python AI):*\n\n${extractedText.trim()}`);
+                }
+            });
 
         } catch (error) {
-            logger.error('Native OCR Error:', error);
-            if (error.message && (error.message.includes('NOT_FOUND') || error.message.includes('ENOENT'))) {
-                await statusMsg.edit('❌ Native OCR engine not found. Please run the setup script to install Tesseract.');
-            } else {
-                await statusMsg.edit('❌ OCR processing failed. Try with a clearer image.');
-            }
+            logger.error('OCR Bridge Error:', error);
+            await statusMsg.edit('❌ OCR failed. Ensure your Ubuntu environment is set up correctly.');
         }
     }
 };
-
