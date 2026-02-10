@@ -93,12 +93,10 @@ async function startApp() {
         logger.info('Configuration loaded from Database.');
         let authStrategy;
 
-        // AUTO-FORCE MongoDB persistence on Render/Cloud environments
-        // Advanced Session Management: Use unique Client ID
+        // Session ID and Storage detection
         const clientId = process.env.SESSION_ID || 'x-userbot';
-        const isCloudValue = process.env.RENDER || process.env.RAILWAY_STATIC_URL || process.env.DYNO;
         const hasMongo = !!process.env.MONGODB_URI;
-        const storageType = process.env.SESSION_STORAGE_TYPE || (isCloudValue && hasMongo ? 'mongo' : 'local');
+        const storageType = process.env.SESSION_STORAGE_TYPE || (hasMongo ? 'mongo' : 'local');
 
         if (storageType === 'mongo' && hasMongo) {
             const { MongoStore } = require('wwebjs-mongo');
