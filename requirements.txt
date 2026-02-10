@@ -1,0 +1,7 @@
+rembg
+sumy
+nltk
+textblob
+pillow
+opencv-python
+moviepy
