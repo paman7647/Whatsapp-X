@@ -93,10 +93,10 @@ async function startApp() {
         logger.info('Configuration loaded from Database.');
         let authStrategy;
 
-        // Session ID and Storage detection
+        // Local Storage Priority: Always use local unless explicitly set to mongo
         const clientId = process.env.SESSION_ID || 'x-userbot';
         const hasMongo = !!process.env.MONGODB_URI;
-        const storageType = process.env.SESSION_STORAGE_TYPE || (hasMongo ? 'mongo' : 'local');
+        const storageType = process.env.SESSION_STORAGE_TYPE || 'local';
 
         if (storageType === 'mongo' && hasMongo) {
             const { MongoStore } = require('wwebjs-mongo');
