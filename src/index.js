@@ -108,7 +108,7 @@ async function startApp() {
                 backupSyncIntervalMs: 60000,
                 clientId: clientId
             });
-            logger.info(`🛰️ CLOUD SESSION [${clientId}]: Loading/Saving to MongoDB...`);
+            logger.info(`🛰️ SESSION [${clientId}]: Using MongoDB storage...`);
         } else {
             const sessionPath = process.env.SESSION_PATH || path.join(process.env.HOME || process.env.USERPROFILE, '.xbot_session', clientId);
             fs.ensureDirSync(sessionPath);
