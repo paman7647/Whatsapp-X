@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-UserBot | Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* Add some advanced dashboard styles */
+        .console-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .text-info {
+            color: #58a6ff;
+        }
+
+        .text-error {
+            color: #ff7b72;
+        }
+
+        .cmd-count {
+            float: right;
+            color: #7ee787;
+            font-weight: bold;
+        }
+
+        .cmd-name {
+            color: #a5d6ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="logo">
+                <span class="x-icon">X</span>
+                <h1>UserBot Dashboard</h1>
+            </div>
+            <div id="status-badge" class="status-badge offline">
+                <span class="dot"></span>
+                <span id="status-text">OFFLINE</span>
+            </div>
+        </header>
+
+        <!-- [NEW] Progress Bar -->
+        <div id="progress-container" class="progress-container hidden">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text">Initializing...</p>
+        </div>
+
+        <main>
+            <section class="qr-section">
+                <div class="card">
+                    <!-- QR Panel -->
+                    <div id="qr-panel">
+                        <h2>Connection QR</h2>
+                        <div class="qr-wrapper">
+                            <img id="qr-code" src="qr.png" alt="Waiting for QR...">
+                            <div id="qr-overlay" class="overlay hidden">
+                                <p>✅ Connected!</p>
+                            </div>
+                        </div>
+                        <p class="hint">Scan this QR code with your WhatsApp mobile app.</p>
+                    </div>
+
+                    <!-- Pairing Code Panel (shown after code is generated) -->
+                    <div id="pairing-panel" class="hidden">
+                        <h2>🔗 Pairing Active</h2>
+                        <div class="pairing-container">
+                            <span class="pairing-label">YOUR PAIRING CODE</span>
+                            <div id="pairing-code" class="pairing-code">--------</div>
+                        </div>
+                        <p class="hint">Open WhatsApp → Linked Devices → Link with Phone Number → Enter this code</p>
+                    </div>
+
+                    <!-- [NEW] System Stats Widget -->
+                    <div id="system-stats" class="system-stats hidden">
+                        <div class="stat-item">
+                            <span class="stat-label">RAM Usage</span>
+                            <span id="ram-usage" class="stat-value">-- GB</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Uptime</span>
+                            <span id="uptime" class="stat-value">--m</span>
+                        </div>
+                    </div>
+
+                    <!-- [NEW] Session Manager -->
+                    <div id="session-panel" class="analytics-panel hidden"
+                        style="margin-bottom:15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                        <h3>🔑 Session Session</h3>
+                        <div class="stat-item">
+                            <span class="stat-label">Session ID</span>
+                            <span id="session-id" class="stat-value">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Storage</span>
+                            <span id="session-type" class="stat-value">--</span>
+                        </div>
+                        <button id="logout-btn" class="btn-primary" style="margin-top:10px; background: #da3633;">Logout
+                            & Clear Session</button>
+                    </div>
+
+                    <!-- [NEW] Command Analytics -->
+                    <div id="analytics-panel" class="analytics-panel hidden">
+                        <h3>🏆 Top Commands</h3>
+                        <ul id="top-commands-list"></ul>
+                    </div>
+
+                    <!-- Phone Input (Hidden as functionality is unstable) -->
+                    <div class="phone-section" style="display: none;">
+                        <h2>📱 Link with Phone</h2>
+                        <p class="hint" style="margin-bottom:12px;">Enter your phone number with country code (no + or
+                            spaces)</p>
+                        <div class="input-group">
+                            <input type="text" id="phone-input" placeholder="e.g. 919876543210" autocomplete="off">
+                        </div>
+                        <button id="pair-btn" class="btn-primary">Generate Pairing Code</button>
+                        <p id="pair-error" class="error-text hidden"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="terminal-section" id="terminal-section">
+                <div class="card terminal-card" id="terminal-card">
+                    <div class="terminal-header">
+                        <div class="terminal-controls">
+                            <span class="dot-red"></span>
+                            <span class="dot-yellow"></span>
+                            <span class="dot-green"></span>
+                        </div>
+                        <span class="terminal-title">system_logs.sh</span>
+                        <button id="fullscreen-btn" class="terminal-btn">⛶</button>
+                    </div>
+                    <div id="terminal-body" class="terminal-body">
+                        <div class="log-line text-blue">[SYSTEM] Initializing dashboard stream...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Console -->
+            <section class="console-section">
+                <h3>🖥️ Live Console</h3>
+                <div id="console-box" class="console-box">
+                    <div class="console-line">Waiting for logs...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Developed by <a href="https://github.com/paman7647" target="_blank">Aman Kumar Pandey</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const qrImg = document.getElementById('qr-code');
+        const statusBadge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+        const terminalBody = document.getElementById('terminal-body');
+        const qrOverlay = document.getElementById('qr-overlay');
+        const terminalCard = document.getElementById('terminal-card');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const qrPanel = document.getElementById('qr-panel');
+        const pairingPanel = document.getElementById('pairing-panel');
+        const pairingCodeText = document.getElementById('pairing-code');
+        const phoneInput = document.getElementById('phone-input');
+        const pairBtn = document.getElementById('pair-btn');
+        const pairError = document.getElementById('pair-error');
+        const socket = io();
+
+        // Phone pairing
+        pairBtn.addEventListener('click', async () => {
+            const phone = phoneInput.value.replace(/[^0-9]/g, '');
+            if (!phone || phone.length < 10) {
+                showError('Enter a valid phone number with country code (e.g. 919876543210)');
+                return;
+            }
+
+            pairBtn.disabled = true;
+            pairBtn.innerText = 'Requesting...';
+            pairError.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await res.json();
+
+                if (data.code) {
+                    qrPanel.classList.add('hidden');
+                    pairingPanel.classList.remove('hidden');
+                    pairingCodeText.innerText = data.code;
+                    pairBtn.innerText = '✅ Code Generated!';
+                    pairBtn.style.background = '#238636';
+                } else {
+                    showError(data.error || 'Failed to generate code');
+                    resetBtn();
+                }
+            } catch (err) {
+                showError('Network error. Is the bot running?');
+                resetBtn();
+            }
+        });
+
+        function showError(msg) {
+            pairError.innerText = msg;
+            pairError.classList.remove('hidden');
+        }
+
+        function resetBtn() {
+            pairBtn.disabled = false;
+            pairBtn.innerText = 'Generate Pairing Code';
+            pairBtn.style.background = '';
+        }
+
+        // Fullscreen
+        fullscreenBtn.addEventListener('click', () => {
+            terminalCard.classList.toggle('full-mode');
+            fullscreenBtn.innerText = terminalCard.classList.contains('full-mode') ? '×' : '⛶';
+        });
+
+        // Initial State
+        socket.on('init', (data) => {
+            updateStatus(data);
+            if (data.logs) {
+                const consoleBox = document.getElementById('console-box');
+                consoleBox.innerHTML = '';
+                data.logs.forEach(log => appendLog(log));
+            }
+            if (data.stats) updateAnalytics(data.stats);
+            if (data.qr) qrImg.src = data.qr;
+        });
+
+        // Real-time Status Update
+        socket.on('status_update', (data) => {
+            updateStatus(data);
+        });
+
+        // Real-time Logs
+        socket.on('log', (log) => {
+            appendLog(log.message, log.type);
+        });
+
+        // Real-time Analytics
+        socket.on('analytics', (stats) => {
+            updateAnalytics(stats);
+        });
+
+        const logoutBtn = document.getElementById('logout-btn');
+
+        logoutBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to log out? This will clear your session and require a new QR scan.')) return;
+
+            logoutBtn.disabled = true;
+            logoutBtn.innerText = 'Logging out...';
+            try {
+                const res = await fetch('/api/logout', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Logged out! The bot will now restart and show a new QR code.');
+                    window.location.reload();
+                } else {
+                    alert('Logout failed: ' + (data.error || 'Unknown error'));
+                    logoutBtn.disabled = false;
+                    logoutBtn.innerText = 'Logout & Clear Session';
+                }
+            } catch (err) {
+                alert('Connection error during logout.');
+                logoutBtn.disabled = false;
+                logoutBtn.innerText = 'Logout & Clear Session';
+            }
+        });
+
+        function updateStatus(data) {
+            const statusMap = {
+                'online': '✅ ONLINE',
+                'pairing': '🔗 PAIRING',
+                'scan_qr': '📷 AWAITING SCAN',
+                'starting': '⏳ STARTING',
+                'offline': '🔴 OFFLINE'
+            };
+
+            statusText.innerText = statusMap[data.status] || data.status.toUpperCase();
+            statusBadge.className = `status-badge ${data.status}`;
+
+            // Session Info
+            if (data.session) {
+                document.getElementById('session-panel').classList.remove('hidden');
+                document.getElementById('session-id').innerText = data.session.id;
+                document.getElementById('session-type').innerText = data.session.type === 'mongo' ? '☁️ MongoDB' : '💻 Local';
+
+                // Show/Hide logout button
+                logoutBtn.style.display = data.status === 'online' ? 'block' : 'none';
+            }
+
+            // System Stats
+            if (data.system) {
+                document.getElementById('system-stats').classList.remove('hidden');
+                document.getElementById('analytics-panel').classList.remove('hidden');
+                document.getElementById('ram-usage').innerText = data.system.ram;
+                document.getElementById('uptime').innerText = data.system.uptime;
+            }
+
+            // Progress Bar Logic
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+
+            if (data.status === 'starting' || data.status === 'offline') {
+                progressContainer.classList.remove('hidden');
+                // Fake progress update logic if needed, or rely on server push
+            } else {
+                progressContainer.classList.add('hidden');
+            }
+
+            // QR / Pairing Logic
+            if (data.status === 'online') {
+                qrPanel.classList.remove('hidden');
+                qrOverlay.classList.remove('hidden');
+                pairingPanel.classList.add('hidden');
+            } else if (data.status === 'scan_qr') {
+                qrPanel.classList.remove('hidden');
+                qrOverlay.classList.add('hidden');
+                pairingPanel.classList.add('hidden');
+            } else if (data.status === 'pairing') {
+                qrPanel.classList.add('hidden');
+                pairingPanel.classList.remove('hidden');
+                if (data.pairingCode) pairingCodeText.innerText = data.pairingCode;
+            }
+        }
+
+        function appendLog(message, type = 'INFO') {
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            if (type === 'ERROR') line.classList.add('text-error');
+            else if (type === 'INFO') line.classList.add('text-info');
+
+            line.innerText = message;
+
+            const consoleBox = document.getElementById('console-box');
+            if (consoleBox) {
+                consoleBox.appendChild(line);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+
+            // Also update terminal for legacy view
+            const termLine = document.createElement('div');
+            termLine.className = 'log-line';
+            termLine.innerText = `[${time}] ${message}`;
+            if (terminalBody) {
+                terminalBody.appendChild(termLine);
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            }
+        }
+
+        function updateAnalytics(stats) {
+            const list = document.getElementById('top-commands-list');
+            if (!list) return;
+            list.innerHTML = Object.entries(stats)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5)
+                .map(([cmd, count]) => `<li><span class="cmd-name">.${cmd}</span> <span class="cmd-count">${count}x</span></li>`)
+                .join('');
+        }
+
+        // Keep QR refreshing just in case
+        setInterval(() => {
+            if (!statusText.innerText.includes('ONLINE')) {
+                qrImg.src = `qr.png?t=${Date.now()}`;
+            }
+        }, 3000);
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,55 @@
+site_name:  WhatsApp-X Documentation
+site_description: The Ultimate WhatsApp UserBot Suite by Aman Kumar Pandey
+site_author: Aman Kumar Pandey
+site_url: https://github.com/paman7647/WhatsApp-X
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Overview: index.md
+  -  User Guide:
+      - Installation: installation.md
+      - Connecting (Pairing): pairing.md
+      - Commands List: commands.md
+  -  Developer Guide:
+      - Project Structure: developer/structure.md
+      - Adding Commands: developer/commands.md
+      - Event Handling: developer/events.md
+      - Database & Models: developer/database.md
+      - Utility Helpers: developer/helpers.md
+  -  Help:
+      - Troubleshooting: troubleshooting.md
+      - Contact Support: contact.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
