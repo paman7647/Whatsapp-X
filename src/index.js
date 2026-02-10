@@ -121,11 +121,29 @@ async function startApp() {
 
         const phoneNumber = (process.env.PHONE_NUMBER || config.phoneNumber || '').replace(/[^0-9]/g, '');
 
+        const isTermux = /com.termux/.test(process.env.PREFIX || '');
+        const linuxPaths = [
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/data/data/com.termux/files/usr/bin/chromium', // Native Termux
+            '/app/.apt/usr/bin/google-chrome' // Heroku/Generic
+        ];
+
+        let chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        if (!chromePath) {
+            for (const p of linuxPaths) {
+                if (fs.existsSync(p)) {
+                    chromePath = p;
+                    break;
+                }
+            }
+        }
+
         const client = new Client({
             authStrategy: authStrategy,
             puppeteer: {
                 headless: true,
-                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+                executablePath: chromePath,
                 userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 args: [
                     '--no-sandbox',

@@ -34,11 +34,16 @@ We hate long setup guides as much as you do. Choose your path and be up and runn
 ### ☁️ Cloud Deployment
 Deploy WhatsApp-X instantly on your favorite cloud provider:
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/paman7647/WhatsApp-X)
 [![Deploy on Fly.io](https://fly.io/docs/images/fly-logo-dark.png)](https://fly.io/docs/hands-on/install-flyctl/)
 
 > **Note:** For cloud deployments, using **MongoDB Cloud URI** is highly recommended for session persistence.
+
+### 📱 Termux (Android)
+To run natively on Android with full Linux support (for NPM/Puppeteer):
+```bash
+curl -sL https://raw.githubusercontent.com/paman7647/WhatsApp-X/main/setup_linux_alt.sh | bash
+```
 
 ## ✨ Elite Features
 
